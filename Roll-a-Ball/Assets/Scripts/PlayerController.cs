@@ -19,6 +19,10 @@ public class PlayerController : MonoBehaviour
     public UnityEngine.UI.Slider healthBar;
     public TextMeshProUGUI healthText;
     private bool invulnerable = false;
+    public TextMeshProUGUI abilityText;
+    private float abilityTimer = 0f;
+    private string currentAbility = "";
+    public UnityEngine.UI.Image screenTint;
 
     void Start()
     {
@@ -37,6 +41,21 @@ public class PlayerController : MonoBehaviour
         }
 
     }
+    void Update()
+    {
+        if (abilityTimer > 0)
+        {
+            abilityTimer -= Time.deltaTime;
+
+            if (abilityTimer <= 0)
+            {
+                abilityTimer = 0;
+                currentAbility = "";
+            }
+        }
+
+        UpdateAbilityUI();
+    }
     void OnMove(InputValue movementValue)
     {
         Vector2 movementVector = movementValue.Get<Vector2>();
@@ -47,10 +66,18 @@ public class PlayerController : MonoBehaviour
     void SetCountText()
     {
         countText.text = "Count: " + count.ToString();
+
         if (count >= 11)
         {
             winTextObject.SetActive(true);
             winTextObject.GetComponent<TextMeshProUGUI>().text = "You Win!";
+
+            Time.timeScale = 0f;
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            this.enabled = false;
         }
     }
     void FixedUpdate()
@@ -97,7 +124,6 @@ public class PlayerController : MonoBehaviour
     {
         currentHP -= damage;
 
-        // Ограничиваем минимум
         if (currentHP < 0)
             currentHP = 0;
 
@@ -111,7 +137,13 @@ public class PlayerController : MonoBehaviour
         {
             winTextObject.SetActive(true);
             winTextObject.GetComponent<TextMeshProUGUI>().text = "You Lose!";
-            this.enabled = false; 
+
+            Time.timeScale = 0f;
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            this.enabled = false;
         }
     }
 
@@ -129,24 +161,47 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-   
+
     IEnumerator SpeedBoost()
     {
         float originalSpeed = speed;
         speed *= 1.5f;
-        yield return new WaitForSeconds(10f);
+
+        currentAbility = "Speed Boost";
+        abilityTimer = 10f;
+
+        SetTint(new Color(0f, 0.5f, 1f, 0.25f)); // blue glow
+
+        yield return new WaitForSecondsRealtime(10f);
+
         speed = originalSpeed;
+
+        ClearTint();
     }
 
     IEnumerator Invulnerability()
     {
         invulnerable = true;
-        yield return new WaitForSeconds(10f);
+
+        currentAbility = "Invulnerability";
+        abilityTimer = 10f;
+
+        SetTint(new Color(1f, 1f, 0f, 0.25f)); // yellow
+
+        yield return new WaitForSecondsRealtime(10f);
+
         invulnerable = false;
+
+        ClearTint();
     }
 
     IEnumerator SlowEnemies()
     {
+        currentAbility = "Enemy Slow";
+        abilityTimer = 10f;
+
+        SetTint(new Color(0.5f, 0f, 1f, 0.25f)); // purple
+
         foreach (EnemyMovement e in Object.FindObjectsByType<EnemyMovement>(FindObjectsSortMode.None))
         {
             if (e.TryGetComponent(out UnityEngine.AI.NavMeshAgent agent))
@@ -154,13 +209,44 @@ public class PlayerController : MonoBehaviour
                 agent.speed *= 0.5f;
             }
         }
-        yield return new WaitForSeconds(10f);
+
+        yield return new WaitForSecondsRealtime(10f);
+
         foreach (EnemyMovement e in Object.FindObjectsByType<EnemyMovement>(FindObjectsSortMode.None))
         {
             if (e.TryGetComponent(out UnityEngine.AI.NavMeshAgent agent))
             {
                 agent.speed *= 2f;
             }
+        }
+
+        ClearTint();
+    }
+    void UpdateAbilityUI()
+    {
+        if (abilityTimer > 0)
+        {
+            abilityText.gameObject.SetActive(true);
+
+            abilityText.text = currentAbility + " : " + abilityTimer.ToString("F1") + "s";
+        }
+        else
+        {
+            abilityText.gameObject.SetActive(false);
+        }
+    }
+    void SetTint(Color color)
+    {
+        if (screenTint != null)
+        {
+            screenTint.color = color;
+        }
+    }
+    void ClearTint()
+    {
+        if (screenTint != null)
+        {
+            screenTint.color = new Color(0, 0, 0, 0);
         }
     }
 
