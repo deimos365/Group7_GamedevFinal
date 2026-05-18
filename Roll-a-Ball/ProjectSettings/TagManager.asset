@@ -6,11 +6,14 @@ TagManager:
   tags:
   - PickUp
   - Enemy
+  - AbilityOrb
+  - Spike
+  - Obstacle
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Obstacles
   - Water
   - UI
   - 
